@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QH
                              QLabel, QProgressBar, QLineEdit, QSpinBox, QComboBox, QFrame)
 from PyQt5.QtGui import QIcon, QFont, QPainter, QColor, QLinearGradient
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QRect, QPoint
-from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtSvg import QSvgRenderer
 from pydub import AudioSegment
 
 class CircularProgressBar(QWidget):
@@ -34,7 +34,7 @@ class CircularProgressBar(QWidget):
         painter.drawEllipse(rect)
 
         painter.setBrush(gradient)
-        painter.drawPie(rect, 90 * 16, -self.value * 3.6 * 16)
+        painter.drawPie(rect, int(90 * 16), int(-self.value * 3.6 * 16))
 
         painter.setPen(Qt.white)
         painter.setFont(QFont("Arial", 20, QFont.Bold))
@@ -178,10 +178,8 @@ class ImageToVideoConverter(QWidget):
         self.setLayout(layout)
 
         # SVG Background
-        self.svg_widget = QSvgWidget(self)
-        self.svg_widget.load(self.get_background_svg())
-        self.svg_widget.setGeometry(self.rect())
-        self.svg_widget.lower()
+        self.svg_renderer = QSvgRenderer(self.get_background_svg().encode('utf-8'))
+        self.update()
 
     def get_background_svg(self):
         return '''
@@ -199,8 +197,9 @@ class ImageToVideoConverter(QWidget):
         </svg>
         '''
 
-    def resizeEvent(self, event):
-        self.svg_widget.setGeometry(self.rect())
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        self.svg_renderer.render(painter)
 
     def select_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
